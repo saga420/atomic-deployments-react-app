@@ -96,16 +96,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+
       - name: Setup virtualenv
         run: |
-          python3 -m pip install --user virtualenv
-          cd atomic-deployments && python3 -m venv env && source env/bin/activate
-
-      - name: Install requirements
-        run: cd atomic-deployments && pip install -r requirements.txt
+          curl -sL https://raw.githubusercontent.com/aaronjwang/atomic-deployments-react-app/master/startup.sh | bash
 
       - name: Run deploy script
-        run: python3 atomic-deployments/run.py $DEPLOY_S3_BUCKET $DEPLOY_LOG_S3_BUCKET $CLOUDFRONT_DISTRIBUTION_ID ./build
+        run: source atomic-deployments-react-app/env/bin/activate && python3 atomic-deployments-react-app/run.py $DEPLOY_S3_BUCKET $DEPLOY_LOG_S3_BUCKET $CLOUDFRONT_DISTRIBUTION_ID ./build
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
