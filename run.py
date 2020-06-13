@@ -8,7 +8,6 @@ import subprocess
 import mimetypes
 import json
 import sys
-from botocore.exceptions import ClientError
 
 s3_client = boto3.client('s3')
 cloudfront_client = boto3.client('cloudfront')
