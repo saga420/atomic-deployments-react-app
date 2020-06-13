@@ -1,6 +1,6 @@
 # atomic-deployments-react-app
 
-Deploy React App to AWS S3 With Cloudfront
+Deploy React App to AWS S3 and Change Path of Cloudfront (Blue Green deploy, Rollback in sec)
 
 ## steps
 
