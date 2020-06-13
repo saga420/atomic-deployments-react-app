@@ -1,0 +1,114 @@
+name: Build & Testing & Deploy React App To S3
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build & Testing
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Cache NPM dependencies
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: ${{ runner.OS }}-npm-cache-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.OS }}-npm-cache-
+      - name: Install Packages
+        run: yarn install
+      - name: Testing
+        run: yarn test
+      - name: Build page
+        run: yarn build
+      - name: Upload build result for next jobs
+        uses: actions/upload-artifact@v1
+        with:
+          name: public
+          path: ./public
+
+  sentry_release:
+    runs-on: ubuntu-18.04
+    name: Create Sentry Release
+    needs: build
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+      SENTRY_DEPLOY_ENVIRONMENT: ${{ secrets.SENTRY_DEPLOY_ENVIRONMENT }}
+
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - name: Download build result for release
+        uses: actions/download-artifact@v1
+        with:
+          name: public
+      - shell: bash
+        run: ls -lash public
+
+      - name: Create new Sentry release
+        run: |
+          # Install Sentry CLI
+          curl -sL https://sentry.io/get-cli/ | bash
+
+          # Create new Sentry release
+          export SENTRY_RELEASE=$(git rev-parse HEAD)
+          sentry-cli releases new -p $SENTRY_PROJECT $SENTRY_RELEASE
+          # https://sentry.io/settings/instadart/integrations/github/
+          # sentry-cli releases -p $SENTRY_PROJECT set-commits --auto $SENTRY_RELEASE
+          sentry-cli releases -p $SENTRY_PROJECT files $SENTRY_RELEASE upload-sourcemaps ./public
+          sentry-cli releases finalize $SENTRY_RELEASE
+
+          # Create new deploy for this Sentry release
+          sentry-cli releases deploys $SENTRY_RELEASE new -e $SENTRY_DEPLOY_ENVIRONMENT
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: sentry_release
+    strategy:
+      matrix:
+        python-version: ['3.x']
+    name: Deploy to S3
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download build result for deploy
+        uses: actions/download-artifact@v1
+        with:
+          name: public
+      - shell: bash
+        run: ls -lash public
+
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Setup virtualenv
+        run: |
+          python3 -m pip install --user virtualenv
+          cd atomic-deployments && python3 -m venv env && source env/bin/activate
+
+      - name: Install requirements
+        run: cd atomic-deployments && pip install -r requirements.txt
+
+      - name: Run deploy script
+        run: python3 atomic-deployments/run.py $DEPLOY_S3_BUCKET $DEPLOY_LOG_S3_BUCKET $CLOUDFRONT_DISTRIBUTION_ID ./build
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.DEV_CLOUDFRONT_DISTRIBUTION_ID }}
+          DEPLOY_LOG_S3_BUCKET: ${{ secrets.DEPLOY_LOG_S3_BUCKET }}
+          DEPLOY_S3_BUCKET: ${{ secrets.DEV_DEPLOY_S3_BUCKET }}

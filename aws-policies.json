@@ -1,0 +1,24 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "VisualEditor1",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront:*",
+        "s3:*"
+      ],
+      "Resource": [
+        "arn:aws:s3:::deploy_bucket/*",
+        "arn:aws:s3:::deploy_bucket",
+        "arn:aws:s3:::deploy_bucket_logs/*",
+        "arn:aws:s3:::deploy_bucket_logs",
+        "arn:aws:s3:us-east-1:your_aws_account_id:accesspoint/*",
+        "arn:aws:s3:us-east-1:your_aws_account_id:job/*",
+        "arn:aws:cloudfront::your_aws_account_id:streaming-distribution/*",
+        "arn:aws:cloudfront::your_aws_account_id:distribution/your_cloudfront_distribution_id",
+        "arn:aws:cloudfront::your_aws_account_id:origin-access-identity/*"
+      ]
+    }
+  ]
+}
