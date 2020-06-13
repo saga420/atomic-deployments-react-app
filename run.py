@@ -8,6 +8,7 @@ import subprocess
 import mimetypes
 import json
 import sys
+from botocore.exceptions import ClientError
 
 s3_client = boto3.client('s3')
 cloudfront_client = boto3.client('cloudfront')
@@ -47,10 +48,16 @@ def set_version(version, bucket):
     try:
         s3_client.copy_object(ACL='public-read', Bucket=bucket, CopySource=bucket + "/current.txt", Key="rollback.txt")
     except Exception as e:
+        log(msg=str(e), error=True)
+
+    try:
         s3_client.put_object(ACL='public-read', Body=version, Bucket=bucket, Key="current.txt",
-                                     ContentType='plain/text')
+                             ContentType='plain/text')
+    except Exception as e:
+
         log(msg=str(e), error=True)
         return False
+
 
 '''
 get rollback version
