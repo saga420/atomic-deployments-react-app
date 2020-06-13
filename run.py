@@ -17,12 +17,6 @@ log_bucket = sys.argv[2]
 cloudfront_distribution_id = sys.argv[3]
 build_dir = sys.argv[4]
 
-
-# python atomic-deployments/run.py test-landing-page-deploy test-landing-page-deploy-log dev E1ATI9M3QB3Q0H
-# bucket="test-landing-page-deploy"
-# log_bucket = "test-landing-page-deploy-log"
-# cloudfront_distribution_id = 'E1ATI9M3QB3Q0H'
-
 '''
 set .map files as private
 '''
