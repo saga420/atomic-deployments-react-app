@@ -54,7 +54,6 @@ def set_version(version, bucket):
         s3_client.put_object(ACL='public-read', Body=version, Bucket=bucket, Key="current.txt",
                              ContentType='plain/text')
     except Exception as e:
-
         log(msg=str(e), error=True)
         return False
 
