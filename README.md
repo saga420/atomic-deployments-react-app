@@ -21,7 +21,7 @@ install python requirements
 pip3 install -r requirements.txt
 ```
 
-run (for details see github_action/example.yml)
+run (for more details & usage see github_action/example.yml)
 
 ```bash
 python3 atomic-deployments/run.py $DEPLOY_S3_BUCKET $DEPLOY_LOG_S3_BUCKET $CLOUDFRONT_DISTRIBUTION_ID $BUILD_DIR
